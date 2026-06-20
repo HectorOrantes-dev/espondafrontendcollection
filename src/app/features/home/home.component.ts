@@ -42,17 +42,20 @@ import { AuthService } from '../../core/services/auth.service';
     </div>
   `,
   styles: `
-    .home { background: #f8fafc; }
+    .home {
+      background: #0f172a;
+      min-height: calc(100vh - 64px);
+    }
 
     /* Hero */
     .hero {
       background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #0f172a 100%);
-      padding: 5rem 1.5rem 4rem;
+      padding: 4rem 1.5rem;
       overflow: hidden;
       position: relative;
       display: flex;
       align-items: center;
-      min-height: 420px;
+      min-height: calc(100vh - 64px);
     }
 
     .hero__inner {
