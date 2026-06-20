@@ -204,8 +204,9 @@ export class AddCarComponent {
 
     this.coleccionService.update(id, formData).subscribe({
       next: () => {
-        // Refresca ese vehículo para traer las URLs nuevas de imágenes
-        this.store.refreshOne(id);
+        // Ya confirmado el PUT: refresca la lista completa en segundo plano
+        // (es la fuente que trae las etiquetas embebidas e imágenes nuevas).
+        this.store.load();
         this.etiquetasStore.reload();
       },
       error: (err: HttpErrorResponse) => {
@@ -233,7 +234,10 @@ export class AddCarComponent {
 
     this.coleccionService.create(formData).subscribe({
       next: (creado: Vehiculo) => {
+        // Alta optimista inmediata + refresco de la lista en segundo plano
+        // para traer las etiquetas embebidas que el POST puede no devolver.
         this.store.add(creado);
+        this.store.load();
         this.etiquetasStore.reload();
       },
       error: (err: HttpErrorResponse) => {

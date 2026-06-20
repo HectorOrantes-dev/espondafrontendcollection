@@ -73,14 +73,6 @@ export class CollectionStore {
     this.vehiculos.set(list);
   }
 
-  /** Recarga un único vehículo desde el backend (ej: tras editar imágenes). */
-  refreshOne(id: string): void {
-    this.service.getById(id).subscribe({
-      next: (v) => this.replace(v),
-      error: () => {},
-    });
-  }
-
   private message(err: HttpErrorResponse): string {
     if (err.status === 0) {
       return 'No se pudo conectar al servidor. Verifica que el backend esté disponible.';
