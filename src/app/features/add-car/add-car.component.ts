@@ -246,32 +246,46 @@ export class AddCarComponent {
   }
 
   /**
-   * Creación optimista: limpia el formulario y muestra éxito al instante; la
-   * subida se procesa en segundo plano y al confirmarse se agrega a la lista.
+   * Creación optimista total: pinta la card en la colección con las imágenes
+   * locales y navega de inmediato. La subida (POST) corre en segundo plano y
+   * solo al fallar se revierte y se avisa. La UX nunca espera al backend.
    */
   private submitCreate(formData: FormData): void {
-    const nombre = this.form.getRawValue().nombre;
+    const { nombre, marca, modelo } = this.form.getRawValue();
+    const tagIds = this.selectedTags();
 
-    // Render inmediato: el usuario ya no espera
-    this.success.set(true);
+    // Vehículo optimista: imágenes locales (object URLs) y etiquetas elegidas
+    const tempId = `temp-${Date.now()}`;
+    const optimista: Vehiculo = {
+      id: tempId,
+      nombre,
+      marca,
+      modelo,
+      imagenes: this.previews().map((p) => p.url),
+      etiquetas: this.etiquetas()
+        .filter((e) => tagIds.has(e.id))
+        .map((e) => ({ id: e.id, nombre: e.nombre })),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    this.store.addPending(optimista);
+
+    // Limpia y navega ya: la card aparece pintada sin esperar la subida
     this.dirty.set(false);
     this.form.reset();
     this.submitted.set(false);
     this.previews.set([]);
     this.selectedTags.set(new Set());
-    this.cdr.markForCheck();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.router.navigate(['/coleccion']);
 
     this.coleccionService.create(formData).subscribe({
-      next: (creado: Vehiculo) => {
-        // Alta optimista inmediata + refresco de la lista en segundo plano
-        // para traer las etiquetas embebidas que el POST puede no devolver.
-        this.store.add(creado);
-        this.store.load();
+      next: () => {
+        // Confirmado: reemplaza el optimista por los datos reales del backend
+        this.store.confirmCreate(tempId);
         this.etiquetasStore.reload();
       },
       error: (err: HttpErrorResponse) => {
-        this.success.set(false);
+        this.store.cancelPending(tempId);
         this.notifyError(err, nombre);
       },
     });

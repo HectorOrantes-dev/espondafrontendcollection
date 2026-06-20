@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { SlicePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
 import { ColeccionService } from '../../core/services/coleccion.service';
 import { CollectionStore } from '../../core/services/collection-store.service';
 import { EtiquetasStore } from '../../core/services/etiquetas-store.service';
@@ -142,34 +143,36 @@ export class CollectionComponent implements OnInit {
   exportExcel(): void {
     if (this.downloadingExcel()) return;
     this.downloadingExcel.set(true);
-    this.coleccionService.exportExcel().subscribe({
-      next: (blob) => this.saveBlob(blob, 'coleccion.xlsx'),
-      error: () =>
-        this.confirmService.ask({
-          title: 'Error al exportar',
-          message: 'No se pudo generar el Excel. Intenta de nuevo.',
-          confirmText: 'Entendido',
-          cancelText: 'Cerrar',
-          danger: true,
-        }),
-      complete: () => this.downloadingExcel.set(false),
-    });
+    this.coleccionService
+      .exportExcel()
+      // finalize corre en ÉXITO y en ERROR: el botón nunca queda bloqueado
+      .pipe(finalize(() => this.downloadingExcel.set(false)))
+      .subscribe({
+        next: (blob) => this.saveBlob(blob, 'coleccion.xlsx'),
+        error: () => this.notifyDownloadError('No se pudo generar el Excel.'),
+      });
   }
 
   exportBackup(): void {
     if (this.downloadingBackup()) return;
     this.downloadingBackup.set(true);
-    this.coleccionService.exportBackup().subscribe({
-      next: (blob) => this.saveBlob(blob, 'respaldo_coleccion.zip'),
-      error: () =>
-        this.confirmService.ask({
-          title: 'Error al generar respaldo',
-          message: 'No se pudo generar el respaldo. Intenta de nuevo.',
-          confirmText: 'Entendido',
-          cancelText: 'Cerrar',
-          danger: true,
-        }),
-      complete: () => this.downloadingBackup.set(false),
+    this.coleccionService
+      .exportBackup()
+      .pipe(finalize(() => this.downloadingBackup.set(false)))
+      .subscribe({
+        next: (blob) => this.saveBlob(blob, 'respaldo_coleccion.zip'),
+        error: () =>
+          this.notifyDownloadError('No se pudo generar el respaldo.'),
+      });
+  }
+
+  private notifyDownloadError(message: string): void {
+    this.confirmService.ask({
+      title: 'Error al descargar',
+      message: `${message} Intenta de nuevo.`,
+      confirmText: 'Entendido',
+      cancelText: 'Cerrar',
+      danger: true,
     });
   }
 
@@ -180,7 +183,9 @@ export class CollectionComponent implements OnInit {
     a.href = url;
     a.download = filename;
     a.click();
-    window.URL.revokeObjectURL(url);
+    // Revoca después de un tick: en archivos grandes, revocar de inmediato
+    // puede cancelar la descarga antes de que el navegador la capture.
+    setTimeout(() => window.URL.revokeObjectURL(url), 1000);
   }
 
   // ── Visor de imágenes (lightbox) ──
