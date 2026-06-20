@@ -324,13 +324,18 @@
 
 .dropzone--full:hover { border-color: #86efac; background: #f0fdf4; }
 
+/* Input oculto pero accesible (los <label for> lo disparan en móvil) */
 .dropzone__input {
   position: absolute;
-  inset: 0;
-  opacity: 0;
-  pointer-events: none;
-  width: 100%;
-  height: 100%;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 .dropzone__content {
@@ -338,7 +343,6 @@
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  pointer-events: none;
 }
 
 .dropzone__upload-icon {

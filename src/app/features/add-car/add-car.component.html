@@ -161,9 +161,9 @@
             </div>
           </div>
 
-          <!-- Hidden inputs -->
+          <!-- Hidden inputs (disparados por los <label for>) -->
           <input
-            #fileInput
+            id="galleryInput"
             type="file"
             accept="image/*"
             multiple
@@ -172,7 +172,7 @@
             (change)="onFileChange($event)"
           />
           <input
-            #cameraInput
+            id="cameraInput"
             type="file"
             accept="image/*"
             capture="environment"
@@ -204,33 +204,23 @@
                 </p>
                 <p class="dropzone__hint">{{ 3 - previews().length }}/3 imágenes restantes</p>
 
-                <!-- Action buttons -->
+                <!-- Action buttons (labels nativos: funcionan en móvil) -->
                 <div class="dropzone__btns">
-                  <button
-                    type="button"
-                    class="dropzone__btn dropzone__btn--gallery"
-                    (click)="fileInput.click()"
-                    aria-label="Elegir imagen de la galería"
-                  >
+                  <label for="galleryInput" class="dropzone__btn dropzone__btn--gallery">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                       <rect x="3" y="3" width="18" height="18" rx="2"/>
                       <circle cx="8.5" cy="8.5" r="1.5"/>
                       <path d="m21 15-5-5L5 21"/>
                     </svg>
                     Galería
-                  </button>
-                  <button
-                    type="button"
-                    class="dropzone__btn dropzone__btn--camera"
-                    (click)="cameraInput.click()"
-                    aria-label="Tomar foto con la cámara"
-                  >
+                  </label>
+                  <label for="cameraInput" class="dropzone__btn dropzone__btn--camera">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                       <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                       <circle cx="12" cy="13" r="4"/>
                     </svg>
                     Cámara
-                  </button>
+                  </label>
                 </div>
               </div>
             } @else {

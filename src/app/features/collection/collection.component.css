@@ -661,9 +661,35 @@
 
 .card__btn--delete:hover { background: #fef2f2; color: #dc2626; }
 
-@media (max-width: 600px) {
-  .page-top__inner { flex-direction: column; align-items: flex-start; }
-  .page-top__right { width: 100%; }
-  .search-box { flex: 1; }
+@media (max-width: 760px) {
+  .page-top {
+    position: static; /* en móvil no fijamos el header para dar más espacio */
+  }
+
+  .page-top__inner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-top__right {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* La búsqueda y el selector ocupan toda la fila */
+  .search-box {
+    flex: 1 1 100%;
+  }
+
   .search-box input { width: 100%; }
+
+  .tag-select { flex: 1 1 100%; }
+
+  /* Los botones de acción se reparten el ancho */
+  .btn-export,
+  .btn-add {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
 }
