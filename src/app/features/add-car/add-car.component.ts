@@ -30,6 +30,9 @@ interface ImagePreview {
   templateUrl: './add-car.component.html',
   styleUrl: './add-car.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(window:beforeunload)': 'onBeforeUnload($event)',
+  },
 })
 export class AddCarComponent {
   private fb = inject(FormBuilder);
@@ -53,6 +56,8 @@ export class AddCarComponent {
   readonly isDragging = signal(false);
   readonly submitted = signal(false);
   readonly previews = signal<ImagePreview[]>([]);
+  // Marca si el usuario tocó algo (imágenes/etiquetas); el texto usa form.dirty
+  readonly dirty = signal(false);
 
   readonly form = this.fb.nonNullable.group({
     nombre: ['', Validators.required],
@@ -76,6 +81,20 @@ export class AddCarComponent {
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+    this.dirty.set(true);
+  }
+
+  /** Hay datos sin guardar que se perderían al recargar/cerrar. */
+  private hasUnsavedChanges(): boolean {
+    return !this.success() && (this.dirty() || this.form.dirty);
+  }
+
+  onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.hasUnsavedChanges()) {
+      event.preventDefault();
+      // Requerido por navegadores antiguos para mostrar el diálogo nativo
+      event.returnValue = '';
+    }
   }
 
   isTagSelected(id: string): boolean {
@@ -141,6 +160,8 @@ export class AddCarComponent {
 
   removeImage(index: number): void {
     this.previews.update((list) => list.filter((_, i) => i !== index));
+    this.dirty.set(true);
+    this.cdr.markForCheck();
   }
 
   private addFiles(files: File[]): void {
@@ -159,6 +180,7 @@ export class AddCarComponent {
       file,
     }));
 
+    if (toAdd.length > 0) this.dirty.set(true);
     this.previews.set([...current, ...toAdd]);
   }
 
@@ -232,6 +254,7 @@ export class AddCarComponent {
 
     // Render inmediato: el usuario ya no espera
     this.success.set(true);
+    this.dirty.set(false);
     this.form.reset();
     this.submitted.set(false);
     this.previews.set([]);
