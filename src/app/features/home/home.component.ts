@@ -39,27 +39,6 @@ import { AuthService } from '../../core/services/auth.service';
           </svg>
         </div>
       </section>
-
-      <!-- Features -->
-      <section class="features">
-        <div class="features__inner">
-          <div class="feature-card">
-            <div class="feature-card__icon">📸</div>
-            <h3>Fotos en Drive</h3>
-            <p>Tus imágenes se almacenan en Google Drive, siempre accesibles y sin límite.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-card__icon">🏷️</div>
-            <h3>Cataloga por marca</h3>
-            <p>Clasifica cada modelo por marca, nombre y línea para encontrarlo al instante.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-card__icon">📱</div>
-            <h3>Acceso desde cualquier lugar</h3>
-            <p>Tu colección disponible en cualquier dispositivo, cuando quieras.</p>
-          </div>
-        </div>
-      </section>
     </div>
   `,
   styles: `
@@ -172,51 +151,6 @@ import { AuthService } from '../../core/services/auth.service';
     }
 
     .hero__car { width: 300px; }
-
-    /* Features */
-    .features { padding: 4rem 1.5rem; }
-
-    .features__inner {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 1.25rem;
-    }
-
-    .feature-card {
-      background: #fff;
-      border: 1px solid #e2e8f0;
-      border-radius: 16px;
-      padding: 1.75rem;
-      box-shadow: 0 1px 3px rgb(0 0 0 / 0.04);
-      transition: box-shadow 0.2s, transform 0.2s;
-    }
-
-    .feature-card:hover {
-      box-shadow: 0 8px 24px rgb(0 0 0 / 0.08);
-      transform: translateY(-2px);
-    }
-
-    .feature-card__icon {
-      font-size: 2rem;
-      margin-bottom: 0.85rem;
-      display: block;
-    }
-
-    .feature-card h3 {
-      font-size: 1rem;
-      font-weight: 700;
-      color: #0f172a;
-      margin: 0 0 0.5rem;
-    }
-
-    .feature-card p {
-      font-size: 0.875rem;
-      color: #64748b;
-      line-height: 1.6;
-      margin: 0;
-    }
 
     @media (max-width: 768px) {
       .hero__art { display: none; }
