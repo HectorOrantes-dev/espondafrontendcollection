@@ -39,6 +39,12 @@ testem.log
 /typings
 __screenshots__/
 
+# Secrets / variables de entorno (NUNCA commitear archivos con credenciales)
+.env
+.env.*
+!.env.example
+*.local
+
 # System files
 .DS_Store
 Thumbs.db

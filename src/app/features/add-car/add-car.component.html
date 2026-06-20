@@ -1,0 +1,288 @@
+<div class="page">
+  <!-- Page header -->
+  <header class="page-header">
+    <div class="page-header__inner">
+      <div class="page-header__text">
+        @if (isEdit()) {
+          <h1>Editar Vehículo</h1>
+          <p>Modifica la información o las fotografías de tu modelo</p>
+        } @else {
+          <h1>Agregar a la Colección</h1>
+          <p>Registra un nuevo vehículo de escala con su información y fotografías</p>
+        }
+      </div>
+      <div class="page-header__decoration" aria-hidden="true">
+        <svg viewBox="0 0 160 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="30" width="140" height="30" rx="8" fill="rgba(255,255,255,0.08)"/>
+          <rect x="25" y="20" width="80" height="18" rx="6" fill="rgba(255,255,255,0.12)"/>
+          <circle cx="38" cy="62" r="11" fill="rgba(255,255,255,0.15)"/>
+          <circle cx="38" cy="62" r="6" fill="rgba(255,255,255,0.1)"/>
+          <circle cx="122" cy="62" r="11" fill="rgba(255,255,255,0.15)"/>
+          <circle cx="122" cy="62" r="6" fill="rgba(255,255,255,0.1)"/>
+          <rect x="110" y="22" width="30" height="16" rx="4" fill="rgba(255,255,255,0.08)"/>
+        </svg>
+      </div>
+    </div>
+  </header>
+
+  <!-- Form body -->
+  <div class="form-wrapper">
+
+    @if (success()) {
+      <div class="success-banner" role="alert">
+        <span class="success-banner__icon">✓</span>
+        <div>
+          <strong>¡Vehículo agregado!</strong>
+          <p>Tu modelo ha sido guardado en la colección correctamente.</p>
+        </div>
+        <a routerLink="/coleccion" class="success-banner__link">Ver colección →</a>
+      </div>
+    }
+
+    @if (serverError()) {
+      <div class="error-banner" role="alert">
+        <span>⚠</span> {{ serverError() }}
+      </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+      <!-- Two-column layout: info (left) + images (right) -->
+      <div class="form-layout">
+
+        <!-- LEFT: Vehicle info -->
+        <section class="form-section">
+          <div class="form-section__head">
+            <div class="form-section__icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 17H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l3 3v4"/>
+                <path d="M13 17v4m0 0H9m4 0h4"/>
+                <circle cx="17" cy="17" r="3"/>
+              </svg>
+            </div>
+            <div>
+              <h2>Información del Vehículo</h2>
+              <p>Datos básicos del modelo de colección</p>
+            </div>
+          </div>
+
+          <div class="fields-grid">
+            <div class="field" [class.field--error]="isInvalid('nombre')">
+              <label for="nombre">Nombre del vehículo <span aria-hidden="true">*</span></label>
+              <input
+                id="nombre"
+                type="text"
+                formControlName="nombre"
+                placeholder="Ej: Porsche 911 GT3 RS"
+                autocomplete="off"
+                aria-describedby="nombre-error"
+              />
+              @if (isInvalid('nombre')) {
+                <span id="nombre-error" class="field__error" role="alert">El nombre es requerido</span>
+              }
+            </div>
+
+            <div class="field" [class.field--error]="isInvalid('marca')">
+              <label for="marca">Marca <span aria-hidden="true">*</span></label>
+              <input
+                id="marca"
+                type="text"
+                formControlName="marca"
+                placeholder="Ej: Hot Wheels, Matchbox, Maisto…"
+                autocomplete="off"
+                aria-describedby="marca-error"
+              />
+              @if (isInvalid('marca')) {
+                <span id="marca-error" class="field__error" role="alert">La marca es requerida</span>
+              }
+            </div>
+
+            <div class="field" [class.field--error]="isInvalid('modelo')">
+              <label for="modelo">Modelo <span aria-hidden="true">*</span></label>
+              <input
+                id="modelo"
+                type="text"
+                formControlName="modelo"
+                placeholder="Ej: Premium, Treasure Hunt, 1:64…"
+                autocomplete="off"
+                aria-describedby="modelo-error"
+              />
+              @if (isInvalid('modelo')) {
+                <span id="modelo-error" class="field__error" role="alert">El modelo es requerido</span>
+              }
+            </div>
+          </div>
+
+          <!-- Etiquetas -->
+          <div class="tags-field">
+            <div class="tags-field__head">
+              <span class="tags-field__label">Etiquetas</span>
+              <a routerLink="/etiquetas" class="tags-field__manage">Gestionar</a>
+            </div>
+            @if (etiquetas().length === 0) {
+              <p class="tags-field__empty">
+                No tienes etiquetas todavía.
+                <a routerLink="/etiquetas">Crea la primera</a>.
+              </p>
+            } @else {
+              <div class="tags-field__chips" role="group" aria-label="Seleccionar etiquetas">
+                @for (et of etiquetas(); track et.id) {
+                  <button
+                    type="button"
+                    class="tag-chip"
+                    [class.tag-chip--active]="isTagSelected(et.id)"
+                    (click)="toggleTag(et.id)"
+                    [attr.aria-pressed]="isTagSelected(et.id)"
+                  >
+                    @if (isTagSelected(et.id)) {
+                      <span class="tag-chip__check" aria-hidden="true">✓</span>
+                    }
+                    {{ et.nombre }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- RIGHT: Images -->
+        <section class="form-section form-section--images">
+          <div class="form-section__head">
+            <div class="form-section__icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <path d="m21 15-5-5L5 21"/>
+              </svg>
+            </div>
+            <div>
+              <h2>Fotografías</h2>
+              <p>Hasta 3 imágenes · PNG, JPG, WEBP</p>
+            </div>
+          </div>
+
+          <!-- Hidden inputs -->
+          <input
+            #fileInput
+            type="file"
+            accept="image/*"
+            multiple
+            class="dropzone__input"
+            aria-label="Seleccionar archivos de imagen"
+            (change)="onFileChange($event)"
+          />
+          <input
+            #cameraInput
+            type="file"
+            accept="image/*"
+            capture="environment"
+            class="dropzone__input"
+            aria-label="Tomar foto con la cámara"
+            (change)="onFileChange($event)"
+          />
+
+          <!-- Drop zone -->
+          <div
+            class="dropzone"
+            [class.dropzone--drag]="isDragging()"
+            [class.dropzone--full]="previews().length >= 3"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave()"
+            (drop)="onDrop($event)"
+          >
+            @if (previews().length < 3) {
+              <div class="dropzone__content">
+                <div class="dropzone__upload-icon" aria-hidden="true">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                </div>
+                <p class="dropzone__primary">
+                  @if (isDragging()) { Suelta aquí } @else { Arrastra tus fotos }
+                </p>
+                <p class="dropzone__hint">{{ 3 - previews().length }}/3 imágenes restantes</p>
+
+                <!-- Action buttons -->
+                <div class="dropzone__btns">
+                  <button
+                    type="button"
+                    class="dropzone__btn dropzone__btn--gallery"
+                    (click)="fileInput.click()"
+                    aria-label="Elegir imagen de la galería"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <rect x="3" y="3" width="18" height="18" rx="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <path d="m21 15-5-5L5 21"/>
+                    </svg>
+                    Galería
+                  </button>
+                  <button
+                    type="button"
+                    class="dropzone__btn dropzone__btn--camera"
+                    (click)="cameraInput.click()"
+                    aria-label="Tomar foto con la cámara"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                      <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                    Cámara
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <div class="dropzone__content dropzone__content--full">
+                <span aria-hidden="true">✓</span>
+                <p>3 de 3 imágenes seleccionadas</p>
+              </div>
+            }
+          </div>
+
+          <!-- Previews -->
+          @if (previews().length > 0) {
+            <div class="preview-grid" role="list" aria-label="Imágenes seleccionadas">
+              @for (preview of previews(); track preview.url; let i = $index) {
+                <div class="preview-card" role="listitem">
+                  <img [src]="preview.url" [alt]="'Imagen ' + (i + 1) + ': ' + preview.name" />
+                  <div class="preview-card__overlay">
+                    <span class="preview-card__name">{{ preview.name }}</span>
+                  </div>
+                  <button
+                    type="button"
+                    class="preview-card__remove"
+                    (click)="removeImage(i)"
+                    [attr.aria-label]="'Eliminar imagen ' + preview.name"
+                  >✕</button>
+                  <span class="preview-card__index" aria-hidden="true">{{ i + 1 }}</span>
+                </div>
+              }
+            </div>
+          }
+        </section>
+
+      </div><!-- /.form-layout -->
+
+      <!-- Actions -->
+      <div class="form-actions">
+        <a routerLink="/coleccion" class="btn btn--cancel">Cancelar</a>
+        <button type="submit" class="btn btn--submit" [disabled]="loading()">
+          @if (loading()) {
+            <span class="spinner" aria-hidden="true"></span>
+            Guardando…
+          } @else {
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
+            {{ isEdit() ? 'Guardar Cambios' : 'Guardar en Colección' }}
+          }
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>

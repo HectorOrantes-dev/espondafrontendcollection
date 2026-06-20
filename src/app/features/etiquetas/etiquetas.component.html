@@ -1,0 +1,83 @@
+<div class="page">
+  <header class="head">
+    <div class="head__inner">
+      <h1>Etiquetas</h1>
+      <p>Organiza tu colección por líneas, series o lo que quieras</p>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- Crear -->
+    <form class="create" [formGroup]="form" (ngSubmit)="crear()" novalidate>
+      <input
+        type="text"
+        formControlName="nombre"
+        placeholder="Nueva etiqueta (ej: Treasure Hunt, Películas, JDM…)"
+        aria-label="Nombre de la nueva etiqueta"
+        maxlength="40"
+      />
+      <button type="submit" class="btn-add" [disabled]="form.invalid || saving()">
+        @if (saving()) {
+          <span class="spinner" aria-hidden="true"></span>
+          Agregando…
+        } @else {
+          + Agregar
+        }
+      </button>
+    </form>
+
+    <!-- Listado -->
+    @if (loading()) {
+      <div class="state"><div class="spinner spinner--lg" aria-hidden="true"></div></div>
+    } @else if (etiquetas().length === 0) {
+      <div class="state state--empty">
+        <span aria-hidden="true">🏷️</span>
+        <p>Aún no tienes etiquetas. Crea la primera arriba.</p>
+      </div>
+    } @else {
+      <ul class="tag-list" role="list">
+        @for (et of etiquetas(); track et.id) {
+          <li class="tag" role="listitem">
+            @if (editingId() === et.id) {
+              <form class="tag__edit" [formGroup]="editForm" (ngSubmit)="guardarEdit(et)">
+                <input
+                  type="text"
+                  formControlName="nombre"
+                  aria-label="Editar nombre de etiqueta"
+                  maxlength="40"
+                  autofocus
+                />
+                <button type="submit" class="tag__btn tag__btn--save" [disabled]="editForm.invalid" aria-label="Guardar">
+                  ✓
+                </button>
+                <button type="button" class="tag__btn" (click)="cancelEdit()" aria-label="Cancelar">
+                  ✕
+                </button>
+              </form>
+            } @else {
+              <span class="tag__name">{{ et.nombre }}</span>
+              <span class="tag__count" [attr.title]="et.cantidad + ' vehículo(s)'">
+                {{ et.cantidad }}
+              </span>
+              <div class="tag__actions">
+                <button type="button" class="tag__btn" (click)="startEdit(et)" aria-label="Editar etiqueta">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button type="button" class="tag__btn tag__btn--danger" (click)="eliminar(et)" aria-label="Eliminar etiqueta">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                  </svg>
+                </button>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</div>

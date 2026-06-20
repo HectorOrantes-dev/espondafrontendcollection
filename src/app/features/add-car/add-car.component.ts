@@ -1,0 +1,257 @@
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { ColeccionService } from '../../core/services/coleccion.service';
+import { CollectionStore } from '../../core/services/collection-store.service';
+import { EtiquetasStore } from '../../core/services/etiquetas-store.service';
+import { ConfirmService } from '../../core/services/confirm.service';
+import { Vehiculo } from '../../core/models/vehiculo.model';
+
+interface ImagePreview {
+  url: string;
+  name: string;
+  file?: File; // ausente = imagen ya existente en el servidor
+  existing?: boolean;
+}
+
+@Component({
+  selector: 'app-add-car',
+  imports: [ReactiveFormsModule, RouterLink],
+  templateUrl: './add-car.component.html',
+  styleUrl: './add-car.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class AddCarComponent {
+  private fb = inject(FormBuilder);
+  private coleccionService = inject(ColeccionService);
+  private store = inject(CollectionStore);
+  private etiquetasStore = inject(EtiquetasStore);
+  private confirmService = inject(ConfirmService);
+  private cdr = inject(ChangeDetectorRef);
+  private router = inject(Router);
+
+  readonly etiquetas = this.etiquetasStore.etiquetas;
+  readonly selectedTags = signal<Set<string>>(new Set());
+
+  // Enlazado desde el parámetro de ruta :id (withComponentInputBinding)
+  readonly id = input<string>();
+  readonly isEdit = computed(() => !!this.id());
+
+  readonly loading = signal(false);
+  readonly success = signal(false);
+  readonly serverError = signal('');
+  readonly isDragging = signal(false);
+  readonly submitted = signal(false);
+  readonly previews = signal<ImagePreview[]>([]);
+
+  readonly form = this.fb.nonNullable.group({
+    nombre: ['', Validators.required],
+    marca: ['', Validators.required],
+    modelo: ['', Validators.required],
+  });
+
+  constructor() {
+    this.etiquetasStore.load();
+    // Cuando hay id (modo edición), carga los datos del vehículo
+    effect(() => {
+      const vehiculoId = this.id();
+      if (!vehiculoId) return;
+      this.loadVehiculo(vehiculoId);
+    });
+  }
+
+  toggleTag(id: string): void {
+    this.selectedTags.update((set) => {
+      const next = new Set(set);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  isTagSelected(id: string): boolean {
+    return this.selectedTags().has(id);
+  }
+
+  private loadVehiculo(id: string): void {
+    this.coleccionService.getById(id).subscribe({
+      next: (v) => {
+        this.form.patchValue({
+          nombre: v.nombre,
+          marca: v.marca,
+          modelo: v.modelo,
+        });
+        this.previews.set(
+          (v.imagenes ?? []).map((url, i) => ({
+            url,
+            name: `Imagen ${i + 1}`,
+            existing: true,
+          })),
+        );
+        this.selectedTags.set(new Set((v.etiquetas ?? []).map((e) => e.id)));
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.serverError.set('No se pudo cargar el vehículo a editar.');
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  isInvalid(field: 'nombre' | 'marca' | 'modelo'): boolean {
+    return this.submitted() && this.form.controls[field].invalid;
+  }
+
+  onFileChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files) return;
+    this.addFiles(Array.from(input.files));
+    input.value = '';
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.previews().length < 3) this.isDragging.set(true);
+  }
+
+  onDragLeave(): void {
+    this.isDragging.set(false);
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging.set(false);
+    if (!event.dataTransfer?.files) return;
+    this.addFiles(Array.from(event.dataTransfer.files));
+  }
+
+  removeImage(index: number): void {
+    this.previews.update((list) => list.filter((_, i) => i !== index));
+  }
+
+  private addFiles(files: File[]): void {
+    const imageFiles = files.filter((f) => f.type.startsWith('image/'));
+    const current = this.previews();
+    const slots = 3 - current.length;
+    if (slots <= 0) return;
+
+    const toAdd: ImagePreview[] = imageFiles.slice(0, slots).map((file) => ({
+      url: URL.createObjectURL(file),
+      name: file.name,
+      file,
+    }));
+
+    this.previews.set([...current, ...toAdd]);
+  }
+
+  onSubmit(): void {
+    this.submitted.set(true);
+    if (this.form.invalid) return;
+
+    this.serverError.set('');
+
+    const { nombre, marca, modelo } = this.form.getRawValue();
+    const formData = new FormData();
+    formData.append('nombre', nombre);
+    formData.append('marca', marca);
+    formData.append('modelo', modelo);
+
+    // Solo se envían las imágenes nuevas (las que tienen File)
+    for (const preview of this.previews()) {
+      if (preview.file) {
+        formData.append('imagenes', preview.file, preview.name);
+      }
+    }
+
+    // Cada etiqueta seleccionada como campo repetido 'etiquetas' (por ID)
+    for (const tagId of this.selectedTags()) {
+      formData.append('etiquetas', tagId);
+    }
+
+    const id = this.id();
+    if (id) {
+      this.submitEdit(id, { nombre, marca, modelo }, formData);
+    } else {
+      this.submitCreate(formData);
+    }
+  }
+
+  /**
+   * Edición optimista: actualiza el texto en el store al instante, navega de
+   * vuelta a la colección sin esperar, y confirma/revierte en segundo plano.
+   */
+  private submitEdit(
+    id: string,
+    changes: { nombre: string; marca: string; modelo: string },
+    formData: FormData,
+  ): void {
+    const previous = this.store.getById(id);
+    this.store.patch(id, changes);
+
+    // La interfaz no espera: regresamos de inmediato
+    this.router.navigate(['/coleccion']);
+
+    this.coleccionService.update(id, formData).subscribe({
+      next: () => {
+        // Refresca ese vehículo para traer las URLs nuevas de imágenes
+        this.store.refreshOne(id);
+        this.etiquetasStore.reload();
+      },
+      error: (err: HttpErrorResponse) => {
+        if (previous) this.store.replace(previous);
+        this.notifyError(err, changes.nombre);
+      },
+    });
+  }
+
+  /**
+   * Creación optimista: limpia el formulario y muestra éxito al instante; la
+   * subida se procesa en segundo plano y al confirmarse se agrega a la lista.
+   */
+  private submitCreate(formData: FormData): void {
+    const nombre = this.form.getRawValue().nombre;
+
+    // Render inmediato: el usuario ya no espera
+    this.success.set(true);
+    this.form.reset();
+    this.submitted.set(false);
+    this.previews.set([]);
+    this.selectedTags.set(new Set());
+    this.cdr.markForCheck();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    this.coleccionService.create(formData).subscribe({
+      next: (creado: Vehiculo) => {
+        this.store.add(creado);
+        this.etiquetasStore.reload();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.success.set(false);
+        this.notifyError(err, nombre);
+      },
+    });
+  }
+
+  private notifyError(err: HttpErrorResponse, nombre: string): void {
+    this.confirmService.ask({
+      title: 'No se pudo guardar',
+      message:
+        err?.error?.error ??
+        `Hubo un problema al guardar "${nombre}". Intenta de nuevo.`,
+      confirmText: 'Entendido',
+      cancelText: 'Cerrar',
+      danger: true,
+    });
+  }
+}
