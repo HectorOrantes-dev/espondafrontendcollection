@@ -116,6 +116,9 @@ export class AddCarComponent {
     if (!input.files) return;
     this.addFiles(Array.from(input.files));
     input.value = '';
+    // Al volver de la app de cámara (móvil) el evento puede caer fuera del
+    // ciclo normal de detección; forzamos el render del nuevo contador.
+    this.cdr.markForCheck();
   }
 
   onDragOver(event: DragEvent): void {
@@ -141,14 +144,18 @@ export class AddCarComponent {
   }
 
   private addFiles(files: File[]): void {
-    const imageFiles = files.filter((f) => f.type.startsWith('image/'));
+    // Las fotos de cámara en algunos móviles llegan con type vacío; las
+    // aceptamos igual (los inputs ya están limitados a accept="image/*").
+    const imageFiles = files.filter(
+      (f) => f.type === '' || f.type.startsWith('image/'),
+    );
     const current = this.previews();
     const slots = 3 - current.length;
     if (slots <= 0) return;
 
     const toAdd: ImagePreview[] = imageFiles.slice(0, slots).map((file) => ({
       url: URL.createObjectURL(file),
-      name: file.name,
+      name: file.name || 'foto.jpg',
       file,
     }));
 
