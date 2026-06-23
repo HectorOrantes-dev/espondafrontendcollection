@@ -60,11 +60,15 @@ export class AddCarComponent {
   // Marca si el usuario tocó algo (imágenes/etiquetas); el texto usa form.dirty
   readonly dirty = signal(false);
 
-  readonly form = this.fb.nonNullable.group({
-    nombre: ['', Validators.required],
-    marca: ['', Validators.required],
-    modelo: ['', Validators.required],
-    precio: [0, [Validators.required, Validators.min(0)]],
+  readonly form = this.fb.group({
+    nombre: this.fb.nonNullable.control('', Validators.required),
+    marca: this.fb.nonNullable.control('', Validators.required),
+    modelo: this.fb.nonNullable.control('', Validators.required),
+    // Nullable: arranca vacío para mostrar el placeholder en vez de "0"
+    precio: this.fb.control<number | null>(null, [
+      Validators.required,
+      Validators.min(0),
+    ]),
   });
 
   constructor() {
@@ -226,7 +230,7 @@ export class AddCarComponent {
 
     const id = this.id();
     if (id) {
-      this.submitEdit(id, { nombre, marca, modelo, precio }, formData);
+      this.submitEdit(id, { nombre, marca, modelo, precio: precio ?? 0 }, formData);
     } else {
       this.submitCreate(formData);
     }
