@@ -114,20 +114,17 @@
 
             <div class="field" [class.field--error]="isInvalid('precio')">
               <label for="precio">Precio <span aria-hidden="true">*</span></label>
-              <div class="field__price">
-                <span class="field__price-symbol" aria-hidden="true">MXN</span>
-                <input
-                  id="precio"
-                  type="number"
-                  formControlName="precio"
-                  min="0"
-                  step="0.01"
-                  inputmode="decimal"
-                  placeholder="0.00"
-                  autocomplete="off"
-                  aria-describedby="precio-error"
-                />
-              </div>
+              <input
+                id="precio"
+                type="number"
+                formControlName="precio"
+                min="0"
+                step="0.01"
+                inputmode="decimal"
+                placeholder="MXN"
+                autocomplete="off"
+                aria-describedby="precio-error"
+              />
               @if (isInvalid('precio')) {
                 <span id="precio-error" class="field__error" role="alert">Ingresa un precio válido</span>
               }
