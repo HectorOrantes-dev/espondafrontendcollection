@@ -111,6 +111,27 @@
                 <span id="modelo-error" class="field__error" role="alert">El modelo es requerido</span>
               }
             </div>
+
+            <div class="field" [class.field--error]="isInvalid('precio')">
+              <label for="precio">Precio <span aria-hidden="true">*</span></label>
+              <div class="field__price">
+                <span class="field__price-symbol" aria-hidden="true">$</span>
+                <input
+                  id="precio"
+                  type="number"
+                  formControlName="precio"
+                  min="0"
+                  step="0.01"
+                  inputmode="decimal"
+                  placeholder="0.00"
+                  autocomplete="off"
+                  aria-describedby="precio-error"
+                />
+              </div>
+              @if (isInvalid('precio')) {
+                <span id="precio-error" class="field__error" role="alert">Ingresa un precio válido</span>
+              }
+            </div>
           </div>
 
           <!-- Etiquetas -->

@@ -16,6 +16,7 @@ import { CollectionStore } from '../../core/services/collection-store.service';
 import { EtiquetasStore } from '../../core/services/etiquetas-store.service';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { Vehiculo } from '../../core/models/vehiculo.model';
+import { toPortraitImage } from '../../core/utils/image-orientation';
 
 interface ImagePreview {
   url: string;
@@ -63,6 +64,7 @@ export class AddCarComponent {
     nombre: ['', Validators.required],
     marca: ['', Validators.required],
     modelo: ['', Validators.required],
+    precio: [0, [Validators.required, Validators.min(0)]],
   });
 
   constructor() {
@@ -108,6 +110,7 @@ export class AddCarComponent {
           nombre: v.nombre,
           marca: v.marca,
           modelo: v.modelo,
+          precio: v.precio ?? 0,
         });
         this.previews.set(
           (v.imagenes ?? []).map((url, i) => ({
@@ -126,7 +129,7 @@ export class AddCarComponent {
     });
   }
 
-  isInvalid(field: 'nombre' | 'marca' | 'modelo'): boolean {
+  isInvalid(field: 'nombre' | 'marca' | 'modelo' | 'precio'): boolean {
     return this.submitted() && this.form.controls[field].invalid;
   }
 
@@ -164,24 +167,36 @@ export class AddCarComponent {
     this.cdr.markForCheck();
   }
 
-  private addFiles(files: File[]): void {
+  private async addFiles(files: File[]): Promise<void> {
     // Las fotos de cámara en algunos móviles llegan con type vacío; las
     // aceptamos igual (los inputs ya están limitados a accept="image/*").
     const imageFiles = files.filter(
       (f) => f.type === '' || f.type.startsWith('image/'),
     );
-    const current = this.previews();
-    const slots = 3 - current.length;
+
+    const slots = 3 - this.previews().length;
     if (slots <= 0) return;
 
-    const toAdd: ImagePreview[] = imageFiles.slice(0, slots).map((file) => ({
-      url: URL.createObjectURL(file),
-      name: file.name || 'foto.jpg',
-      file,
-    }));
-
-    if (toAdd.length > 0) this.dirty.set(true);
-    this.previews.set([...current, ...toAdd]);
+    // Procesa cada imagen a VERTICAL antes de agregarla; se añade en cuanto
+    // está lista para que el contador reaccione una por una.
+    for (const file of imageFiles.slice(0, slots)) {
+      if (this.previews().length >= 3) break;
+      const portrait = await toPortraitImage(file);
+      this.previews.update((list) =>
+        list.length < 3
+          ? [
+              ...list,
+              {
+                url: URL.createObjectURL(portrait),
+                name: portrait.name || 'foto.jpg',
+                file: portrait,
+              },
+            ]
+          : list,
+      );
+      this.dirty.set(true);
+      this.cdr.markForCheck();
+    }
   }
 
   onSubmit(): void {
@@ -190,11 +205,12 @@ export class AddCarComponent {
 
     this.serverError.set('');
 
-    const { nombre, marca, modelo } = this.form.getRawValue();
+    const { nombre, marca, modelo, precio } = this.form.getRawValue();
     const formData = new FormData();
     formData.append('nombre', nombre);
     formData.append('marca', marca);
     formData.append('modelo', modelo);
+    formData.append('precio', String(precio ?? 0));
 
     // Solo se envían las imágenes nuevas (las que tienen File)
     for (const preview of this.previews()) {
@@ -210,7 +226,7 @@ export class AddCarComponent {
 
     const id = this.id();
     if (id) {
-      this.submitEdit(id, { nombre, marca, modelo }, formData);
+      this.submitEdit(id, { nombre, marca, modelo, precio }, formData);
     } else {
       this.submitCreate(formData);
     }
@@ -222,7 +238,7 @@ export class AddCarComponent {
    */
   private submitEdit(
     id: string,
-    changes: { nombre: string; marca: string; modelo: string },
+    changes: { nombre: string; marca: string; modelo: string; precio: number },
     formData: FormData,
   ): void {
     const previous = this.store.getById(id);
@@ -251,7 +267,7 @@ export class AddCarComponent {
    * solo al fallar se revierte y se avisa. La UX nunca espera al backend.
    */
   private submitCreate(formData: FormData): void {
-    const { nombre, marca, modelo } = this.form.getRawValue();
+    const { nombre, marca, modelo, precio } = this.form.getRawValue();
     const tagIds = this.selectedTags();
 
     // Vehículo optimista: imágenes locales (object URLs) y etiquetas elegidas
@@ -261,6 +277,7 @@ export class AddCarComponent {
       nombre,
       marca,
       modelo,
+      precio: precio ?? 0,
       imagenes: this.previews().map((p) => p.url),
       etiquetas: this.etiquetas()
         .filter((e) => tagIds.has(e.id))

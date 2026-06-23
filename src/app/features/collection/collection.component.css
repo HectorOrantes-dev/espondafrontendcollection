@@ -278,6 +278,57 @@
   padding: 2rem 1.5rem;
 }
 
+/* ── Resumen ── */
+.resumen {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.resumen__stat {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.04);
+}
+
+.resumen__num {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.resumen__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+}
+
+/* El valor total resaltado */
+.resumen__stat:nth-child(2) .resumen__num { color: #dc2626; }
+
+@media (max-width: 560px) {
+  .resumen {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+  .resumen__stat {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  .resumen__num { font-size: 1.25rem; }
+}
+
 /* ── State messages ── */
 .state-message {
   display: flex;
@@ -599,6 +650,43 @@
   font-size: 0.8rem;
   color: #64748b;
   margin: 0;
+}
+
+.card__precio {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #16a34a;
+  margin: 0.25rem 0 0;
+  letter-spacing: -0.01em;
+}
+
+/* Card en subida (optimista) */
+.card--uploading { position: relative; }
+
+.card--uploading .card__image img { filter: brightness(0.92); }
+
+.card__uploading {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgb(15 23 42 / 0.78);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+}
+
+.spinner--xs {
+  width: 11px;
+  height: 11px;
+  border-width: 2px;
+  border-color: rgb(255 255 255 / 0.4);
+  border-top-color: #fff;
 }
 
 .card__tags {

@@ -50,10 +50,11 @@ export class ColeccionService {
     return this.http.get(`${this.apiUrl}/backup`, { responseType: 'blob' });
   }
 
-  /** Corrige las URLs de Drive y asegura arreglos no nulos. */
+  /** Corrige las URLs de Drive y asegura valores no nulos. */
   private normalize(v: Vehiculo): Vehiculo {
     return {
       ...v,
+      precio: v.precio ?? 0,
       imagenes: (v.imagenes ?? []).map((url) => toDriveThumbnail(url)),
       etiquetas: v.etiquetas ?? [],
     };

@@ -5,6 +5,7 @@ export interface Vehiculo {
   nombre: string;
   marca: string;
   modelo: string;
+  precio: number;
   imagenes: string[];
   etiquetas: EtiquetaRef[];
   created_at: string;

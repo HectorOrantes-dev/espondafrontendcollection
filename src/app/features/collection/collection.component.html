@@ -137,6 +137,24 @@
   }
 
   <div class="content">
+    <!-- Resumen de la colección -->
+    @if (!loading() && !error() && vehiculos().length > 0) {
+      <section class="resumen" aria-label="Resumen de la colección">
+        <div class="resumen__stat">
+          <span class="resumen__num">{{ resumen().cantidad }}</span>
+          <span class="resumen__label">Vehículos</span>
+        </div>
+        <div class="resumen__stat">
+          <span class="resumen__num">{{ resumen().valorTotal | currency:'USD':'symbol':'1.2-2' }}</span>
+          <span class="resumen__label">Valor total</span>
+        </div>
+        <div class="resumen__stat">
+          <span class="resumen__num">{{ resumen().promedio | currency:'USD':'symbol':'1.2-2' }}</span>
+          <span class="resumen__label">Precio promedio</span>
+        </div>
+      </section>
+    }
+
     <!-- Loading -->
     @if (loading()) {
       <div class="state-message" role="status" aria-live="polite">
@@ -177,7 +195,14 @@
             role="listitem"
             [id]="'card-' + v.id"
             [class.card--highlight]="highlightId() === v.id"
+            [class.card--uploading]="isUploading(v)"
           >
+            @if (isUploading(v)) {
+              <span class="card__uploading" role="status">
+                <span class="spinner spinner--xs" aria-hidden="true"></span>
+                Subiendo…
+              </span>
+            }
             @if (v.imagenes && v.imagenes.length > 0) {
               <button
                 type="button"
@@ -219,6 +244,9 @@
               <span class="card__marca">{{ v.marca }}</span>
               <h2 class="card__nombre">{{ v.nombre }}</h2>
               <p class="card__modelo">{{ v.modelo }}</p>
+              @if (v.precio > 0) {
+                <p class="card__precio">{{ v.precio | currency:'USD':'symbol':'1.2-2' }}</p>
+              }
 
               @if (v.etiquetas && v.etiquetas.length > 0) {
                 <div class="card__tags">

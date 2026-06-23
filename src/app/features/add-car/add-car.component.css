@@ -4,6 +4,26 @@
   background: #f8fafc;
 }
 
+/* ── Campo precio ── */
+.field__price {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.field__price-symbol {
+  position: absolute;
+  left: 0.95rem;
+  color: #64748b;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.field__price input {
+  width: 100%;
+  padding-left: 1.9rem;
+}
+
 /* ── Etiquetas ── */
 .tags-field {
   margin-top: 1.5rem;

@@ -6,7 +6,7 @@ import {
   signal,
   computed,
 } from '@angular/core';
-import { SlicePipe } from '@angular/common';
+import { SlicePipe, CurrencyPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ColeccionService } from '../../core/services/coleccion.service';
@@ -24,7 +24,7 @@ interface Lightbox {
 
 @Component({
   selector: 'app-collection',
-  imports: [RouterLink, SlicePipe],
+  imports: [RouterLink, SlicePipe, CurrencyPipe],
   templateUrl: './collection.component.html',
   styleUrl: './collection.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -51,6 +51,16 @@ export class CollectionComponent implements OnInit {
   readonly downloadingBackup = signal(false);
   readonly highlightId = signal<string | null>(null);
   private highlightTimer: ReturnType<typeof setTimeout> | undefined;
+
+  // Resumen calculado en vivo desde el store: se actualiza solo al crear,
+  // editar o borrar (incluso de forma optimista), sin pedir nada al backend.
+  readonly resumen = computed(() => {
+    const list = this.vehiculos();
+    const cantidad = list.length;
+    const valorTotal = list.reduce((sum, v) => sum + (v.precio || 0), 0);
+    const promedio = cantidad ? valorTotal / cantidad : 0;
+    return { cantidad, valorTotal, promedio };
+  });
 
   readonly filtered = computed(() => {
     const term = this.search().toLowerCase().trim();
@@ -223,6 +233,11 @@ export class CollectionComponent implements OnInit {
 
   trackById(_: number, v: Vehiculo): string {
     return v.id;
+  }
+
+  /** Las cards optimistas (subida en curso) tienen id temporal. */
+  isUploading(v: Vehiculo): boolean {
+    return v.id.startsWith('temp-');
   }
 
   onImageError(event: Event): void {
